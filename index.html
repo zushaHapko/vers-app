@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verstár & Dalszöveg Műhely — Éjféli Kiadás</title>
+    <title>Munkácsi Tamás — Éjféli Kiadás</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -146,8 +146,8 @@
                     </svg>
                 </div>
                 <div>
-                    <h1 class="gothic-title text-2xl sm:text-3xl font-semibold text-poe-parchment tracking-wide">Verstár & Dalszöveg</h1>
-                    <p class="text-[11px] text-poe-mauve uppercase tracking-[0.2em] font-medium">Éjféli Alkotói Műhely</p>
+                    <h1 class="gothic-title text-2xl sm:text-3xl font-semibold text-poe-parchment tracking-wide">Munkácsi Tamás</h1>
+                    <p class="text-[11px] text-poe-mauve uppercase tracking-[0.2em] font-medium">Versek, Dalszövegek & Éjféli Írások</p>
                 </div>
             </div>
             
@@ -470,7 +470,7 @@
 
     <!-- Lábléc -->
     <footer id="main-footer" class="mt-auto py-8 text-center text-xs text-poe-muted border-t border-poe-lavender/40 transition-all duration-500">
-        <p class="gothic-title text-sm text-poe-parchment/70 mb-1">Verstár & Dalszöveg Műhely — Éjféli Kiadás</p>
+        <p class="gothic-title text-sm text-poe-parchment/70 mb-1">Munkácsi Tamás — Éjféli Alkotói Műhely</p>
         <p>Minden kéziratod biztonságosan, helyben a böngésződben tárolódik.</p>
     </footer>
 
@@ -1367,7 +1367,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `verstar_mentes_${new Date().toISOString().slice(0, 10)}.json`;
+            a.download = `Munkacsi_Tamas_keziratok_${new Date().toISOString().slice(0, 10)}.json`;
             a.click();
             URL.revokeObjectURL(url);
             showToast('Teljes kézirattár exportálva (JSON).', 'success');
@@ -1414,12 +1414,12 @@
             const date = document.getElementById('editor-date').value;
             const content = document.getElementById('editor-content').value;
 
-            const txtBody = `${title.toUpperCase()}\n(${date})\n${'='.repeat(40)}\n\n${content}\n`;
+            const txtBody = `MUNKÁCSI TAMÁS\n${title.toUpperCase()}\n(${date})\n${'='.repeat(40)}\n\n${content}\n`;
             const blob = new Blob([txtBody], { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${title.replace(/[^a-zA-Z0-9áéíóöőúüűÁÉÍÓÖŐÚÜŰ_-]/g, '_')}.txt`;
+            a.download = `Munkacsi_Tamas_${title.replace(/[^a-zA-Z0-9áéíóöőúüűÁÉÍÓÖŐÚÜŰ_-]/g, '_')}.txt`;
             a.click();
             URL.revokeObjectURL(url);
             showToast('Kézirat letöltve .TXT fájlként.', 'success');
