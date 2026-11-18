@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="hu" class="h-full dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verstár & Dalszöveg Műhely — Éjféli Kiadás</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Cormorant Garamond & Crimson Text for Gothic/Romantic poetry, Inter for clean UI -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        poe: {
+                            bg: '#18181f',         // Mély éjkék-szürke alap
+                            surface: '#21212b',    // Füstös szén kártya/felület
+                            surfaceHover: '#282834',
+                            lavender: '#3d3846',   // Tompa lilásszürke keret/elem
+                            lavenderLight: '#524b5e',
+                            mauve: '#9e7b88',      // Halvány sírkő-rózsaszín / mályva
+                            mauveHover: '#b38d9b',
+                            parchment: '#dcd6d0',  // Fakó pergamen szövegszín
+                            muted: '#8e8896',      // Halvány hamuszürke másodlagos szöveg
+                            bronze: '#b09878',     // Elhalványuló arany / bronz akcentus
+                            bronzeHover: '#c4ab89',
+                            crimson: '#7a3b48'     // Mély sötétbordó törléshez/figyelmeztetéshez
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Cormorant Garamond', 'Crimson Text', 'serif'],
+                        poetic: ['Crimson Text', 'Cormorant Garamond', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #18181f;
+            color: #dcd6d0;
+            /* Finom, sötét pergamen / köd textúra érzet */
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(61, 56, 70, 0.25) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(158, 123, 136, 0.12) 0%, transparent 50%);
+            background-attachment: fixed;
+        }
+        .gothic-title {
+            font-family: 'Cormorant Garamond', serif;
+        }
+        .poetic-text {
+            font-family: 'Crimson Text', serif;
+        }
+        /* Egyedi komor görgetősáv */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #18181f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3d3846;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #524b5e;
+        }
+        /* Drag & Drop vizuális jelzések */
+        .line-row.dragging {
+            opacity: 0.4;
+            border: 1px dashed #b09878;
+        }
+        .line-row.drag-over {
+            border-top: 2px solid #9e7b88;
+        }
+        /* Gyertyafényes Zen mód effektus */
+        .candlelight-glow {
+            box-shadow: 0 0 80px rgba(176, 152, 120, 0.08);
+        }
+        @keyframes flicker {
+            0%, 100% { opacity: 0.92; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.03); }
+        }
+        .candle-flame {
+            animation: flicker 3s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col antialiased selection:bg-poe-mauve/30 selection:text-poe-parchment">
+
+    <!-- Értesítési buborékok (Toast) -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Egyedi Megerősítő / Információs Modális Ablak -->
+    <div id="custom-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-poe-surface border border-poe-lavender rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all scale-95 opacity-0 duration-300" id="modal-content">
+            <div class="flex items-center gap-3 mb-3">
+                <i class="fa-solid fa-feather-pointed text-poe-bronze text-lg"></i>
+                <h3 id="modal-title" class="gothic-title text-2xl font-semibold text-poe-parchment">Megerősítés</h3>
+            </div>
+            <p id="modal-message" class="text-poe-muted mb-6 text-sm leading-relaxed">Biztosan végrehajtod ezt a műveletet?</p>
+            <div class="flex justify-end gap-3">
+                <button id="modal-cancel" class="px-4 py-2 rounded-xl text-sm font-medium bg-poe-lavender hover:bg-poe-lavenderLight text-poe-parchment transition">Mégse</button>
+                <button id="modal-confirm" class="px-4 py-2 rounded-xl text-sm font-medium bg-poe-crimson hover:bg-poe-crimson/80 text-poe-parchment border border-poe-mauve/30 transition">Végrehajtás</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Változásnapló / Előzmények Modális Ablak -->
+    <div id="history-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-poe-surface border border-poe-lavender rounded-2xl shadow-2xl max-w-lg w-full p-6 max-h-[80vh] flex flex-col">
+            <div class="flex items-center justify-between pb-4 border-b border-poe-lavender">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-scroll text-poe-bronze"></i>
+                    <h3 class="gothic-title text-2xl font-semibold text-poe-parchment">Krónika & Változásnapló</h3>
+                </div>
+                <button onclick="closeHistoryModal()" class="text-poe-muted hover:text-poe-parchment p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div id="history-list" class="py-4 overflow-y-auto space-y-3 flex-1 text-sm">
+                <!-- Naplóbejegyzések dinamikusan -->
+            </div>
+            <div class="pt-3 border-t border-poe-lavender flex justify-between items-center text-xs text-poe-muted">
+                <span>Minden mentés időbélyeggel rögzítve</span>
+                <button onclick="closeHistoryModal()" class="px-4 py-2 rounded-xl bg-poe-lavender hover:bg-poe-lavenderLight text-poe-parchment font-medium transition">Bezárás</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fejléc / Navigáció -->
+    <header id="main-header" class="bg-poe-surface/85 backdrop-blur-md border-b border-poe-lavender sticky top-0 z-30 transition-all duration-500">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Logó & Holló SVG -->
+            <div class="flex items-center gap-3.5 cursor-pointer group" onclick="switchView('dashboard')">
+                <div class="w-11 h-11 rounded-2xl bg-poe-bg border border-poe-lavender group-hover:border-poe-bronze/60 flex items-center justify-center text-poe-bronze shadow-inner transition">
+                    <!-- Egyedi stílusos Holló / Tollpihe SVG ikon -->
+                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20.71 3.29a1 1 0 0 0-1.42 0l-3.17 3.17c-1.85-.46-4.13-.12-6.19 1.15-2.55 1.57-4.38 4.46-5.22 7.82L3.29 19.3a1 1 0 0 0 1.41 1.41l3.87-1.42c3.36-.84 6.25-2.67 7.82-5.22 1.27-2.06 1.61-4.34 1.15-6.19l3.17-3.17a1 1 0 0 0 0-1.42zM14.7 12.97c-1.15 1.87-3.22 3.28-5.73 4.02l3.82-3.82a1 1 0 0 0-1.41-1.41l-3.82 3.82c.74-2.51 2.15-4.58 4.02-5.73 1.48-.91 3.12-1.15 4.44-.82l-.5 3.44z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="gothic-title text-2xl sm:text-3xl font-semibold text-poe-parchment tracking-wide">Verstár & Dalszöveg</h1>
+                    <p class="text-[11px] text-poe-mauve uppercase tracking-[0.2em] font-medium">Éjféli Alkotói Műhely</p>
+                </div>
+            </div>
+            
+            <!-- Műveleti gombok -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button onclick="openNewEditor('poem')" class="flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl bg-poe-lavender hover:bg-poe-lavenderLight text-poe-parchment border border-poe-bronze/30 font-medium text-xs sm:text-sm shadow-sm transition">
+                    <i class="fa-solid fa-feather text-poe-bronze text-xs"></i> <span class="hidden sm:inline">Új Vers</span><span class="sm:hidden">Vers</span>
+                </button>
+                <button onclick="openNewEditor('lyrics')" class="flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl bg-poe-mauve/20 hover:bg-poe-mauve/30 text-poe-parchment border border-poe-mauve/50 font-medium text-xs sm:text-sm shadow-sm transition">
+                    <i class="fa-solid fa-music text-poe-mauve text-xs"></i> <span class="hidden sm:inline">Új Dalszöveg</span><span class="sm:hidden">Dal</span>
+                </button>
+                <button onclick="openNewEditor('diary')" class="hidden md:flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-poe-bg hover:bg-poe-lavender text-poe-muted hover:text-poe-parchment border border-poe-lavender font-medium text-sm transition" title="Új naplóbejegyzés vagy próza">
+                    <i class="fa-solid fa-book-skull text-poe-bronze text-xs"></i> Napló
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Fő Tartalmi Terület -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ================= KÖNYVTÁR / MŰHELY NÉZET (DASHBOARD) ================= -->
+        <div id="view-dashboard" class="space-y-6">
+            
+            <!-- Keresés, Szűrés & Biztonsági mentés sáv -->
+            <div class="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between bg-poe-surface p-4 rounded-2xl shadow-lg border border-poe-lavender">
+                <!-- Keresőmező -->
+                <div class="relative flex-1 max-w-md">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-poe-muted">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" id="search-input" oninput="handleSearch()" placeholder="Keresés címben, verssorban vagy dátumban..." 
+                        class="w-full pl-11 pr-4 py-2.5 rounded-xl bg-poe-bg border border-poe-lavender focus:border-poe-bronze focus:outline-none text-sm text-poe-parchment placeholder:text-poe-muted/70 transition">
+                </div>
+
+                <!-- Szűrő gombok -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-3.5 py-2 rounded-xl text-xs font-medium bg-poe-bronze text-poe-bg transition">Mindegyik</button>
+                    <button onclick="setFilter('poem')" id="filter-poem" class="filter-btn px-3.5 py-2 rounded-xl text-xs font-medium bg-poe-bg hover:bg-poe-lavender text-poe-parchment border border-poe-lavender transition">Versek</button>
+                    <button onclick="setFilter('lyrics')" id="filter-lyrics" class="filter-btn px-3.5 py-2 rounded-xl text-xs font-medium bg-poe-bg hover:bg-poe-lavender text-poe-parchment border border-poe-lavender transition">Dalszövegek</button>
+                    <button onclick="setFilter('diary')" id="filter-diary" class="filter-btn px-3.5 py-2 rounded-xl text-xs font-medium bg-poe-bg hover:bg-poe-lavender text-poe-parchment border border-poe-lavender transition">Napló & Próza</button>
+                    <button onclick="setFilter('favorites')" id="filter-favorites" class="filter-btn px-3.5 py-2 rounded-xl text-xs font-medium bg-poe-bg hover:bg-poe-lavender text-poe-mauve border border-poe-lavender transition flex items-center gap-1">
+                        <i class="fa-solid fa-star text-[10px]"></i> Kedvencek
+                    </button>
+                </div>
+
+                <!-- Rendezés & Export/Import -->
+                <div class="flex items-center gap-2 justify-end border-t lg:border-t-0 pt-3 lg:pt-0 border-poe-lavender/50">
+                    <button onclick="toggleSortOrder()" id="sort-btn" class="px-3 py-2 rounded-xl text-xs font-medium bg-poe-bg hover:bg-poe-lavender text-poe-muted hover:text-poe-parchment border border-poe-lavender transition flex items-center gap-1.5" title="Rendezés dátum szerint">
+                        <i class="fa-solid fa-arrow-down-short-wide text-poe-bronze"></i> <span id="sort-label">Legújabb</span>
+                    </button>
+                    <button onclick="exportAllJSON()" class="px-3 py-2 rounded-xl text-xs font-medium bg-poe-bg hover:bg-poe-lavender text-poe-muted hover:text-poe-parchment border border-poe-lavender transition flex items-center gap-1.5" title="Összes mű mentése JSON fájlba">
+                        <i class="fa-solid fa-download text-poe-bronze"></i> <span class="hidden sm:inline">Mentés</span>
+                    </button>
+                    <label class="cursor-pointer px-3 py-2 rounded-xl text-xs font-medium bg-poe-bg hover:bg-poe-lavender text-poe-muted hover:text-poe-parchment border border-poe-lavender transition flex items-center gap-1.5" title="Művek betöltése JSON fájlból">
+                        <i class="fa-solid fa-upload text-poe-mauve"></i> <span class="hidden sm:inline">Betöltés</span>
+                        <input type="file" id="import-json-input" accept=".json" class="hidden" onchange="importFromJSON(event)">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Statisztikai kártyák -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="bg-poe-surface border border-poe-lavender p-4 rounded-2xl flex items-center gap-3.5">
+                    <div class="w-11 h-11 rounded-xl bg-poe-bg border border-poe-lavender flex items-center justify-center text-poe-bronze text-lg">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-poe-muted">Összes kézirat</p>
+                        <h4 id="stat-total" class="gothic-title text-2xl font-bold text-poe-parchment">0</h4>
+                    </div>
+                </div>
+                <div class="bg-poe-surface border border-poe-lavender p-4 rounded-2xl flex items-center gap-3.5">
+                    <div class="w-11 h-11 rounded-xl bg-poe-bg border border-poe-lavender flex items-center justify-center text-poe-mauve text-lg">
+                        <i class="fa-solid fa-feather-pointed"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-poe-muted">Versek</p>
+                        <h4 id="stat-poems" class="gothic-title text-2xl font-bold text-poe-parchment">0</h4>
+                    </div>
+                </div>
+                <div class="bg-poe-surface border border-poe-lavender p-4 rounded-2xl flex items-center gap-3.5">
+                    <div class="w-11 h-11 rounded-xl bg-poe-bg border border-poe-lavender flex items-center justify-center text-poe-bronze text-lg">
+                        <i class="fa-solid fa-music"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-poe-muted">Dalszövegek</p>
+                        <h4 id="stat-lyrics" class="gothic-title text-2xl font-bold text-poe-parchment">0</h4>
+                    </div>
+                </div>
+                <div class="bg-poe-surface border border-poe-lavender p-4 rounded-2xl flex items-center gap-3.5">
+                    <div class="w-11 h-11 rounded-xl bg-poe-bg border border-poe-lavender flex items-center justify-center text-poe-mauve text-lg">
+                        <i class="fa-solid fa-hourglass-half"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-poe-muted">Napló & Próza</p>
+                        <h4 id="stat-diary" class="gothic-title text-2xl font-bold text-poe-parchment">0</h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kéziratok rácsa -->
+            <div id="works-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dinamikusan generált kártyák -->
+            </div>
+
+            <!-- Üres állapot (ha nincs találat vagy kézirat) -->
+            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-16 px-4 text-center bg-poe-surface rounded-2xl border border-poe-lavender">
+                <div class="w-16 h-16 rounded-2xl bg-poe-bg border border-poe-lavender flex items-center justify-center text-poe-bronze text-2xl mb-4">
+                    <i class="fa-solid fa-crow"></i>
+                </div>
+                <h3 class="gothic-title text-2xl font-semibold text-poe-parchment mb-1">Csend honol a kézirattárban</h3>
+                <p class="text-sm text-poe-muted max-w-md mb-6">„És a holló csak azt mondta: Soha már.” — Kezdj el írni egy új verset, dalszöveget vagy éjféli gondolatot!</p>
+                <div class="flex gap-3">
+                    <button onclick="openNewEditor('poem')" class="px-5 py-2.5 rounded-xl bg-poe-bronze hover:bg-poe-bronzeHover text-poe-bg font-semibold text-sm shadow transition">
+                        Új kézirat írása
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SZERKESZTŐ NÉZET (EDITOR) ================= -->
+        <div id="view-editor" class="hidden space-y-5">
+            
+            <!-- Felső navigációs és műveleti sáv -->
+            <div id="editor-topbar" class="flex flex-wrap items-center justify-between gap-3 bg-poe-surface p-3.5 rounded-2xl shadow-md border border-poe-lavender transition-all duration-500">
+                <button onclick="switchView('dashboard')" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-poe-bg hover:bg-poe-lavender text-poe-parchment border border-poe-lavender text-xs sm:text-sm font-medium transition">
+                    <i class="fa-solid fa-arrow-left text-poe-bronze"></i> Kézirattár
+                </button>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Gyertyafényes Zen mód kapcsoló -->
+                    <button onclick="toggleZenMode()" id="zen-btn" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-poe-bg hover:bg-poe-lavender text-poe-muted hover:text-poe-bronze border border-poe-lavender text-xs font-medium transition" title="Figyelemelterelés-mentes gyertyafényes írás">
+                        <i class="fa-solid fa-fire-flame-curved text-poe-bronze candle-flame"></i> <span class="hidden sm:inline">Gyertyafény</span>
+                    </button>
+
+                    <!-- Változásnapló gomb -->
+                    <button onclick="openHistoryModal()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-poe-bg hover:bg-poe-lavender text-poe-muted hover:text-poe-parchment border border-poe-lavender text-xs font-medium transition" title="Módosítások naplója">
+                        <i class="fa-solid fa-clock-rotate-left text-poe-mauve"></i> <span class="hidden md:inline">Napló</span>
+                    </button>
+
+                    <!-- TXT Export -->
+                    <button onclick="exportCurrentTXT()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-poe-bg hover:bg-poe-lavender text-poe-muted hover:text-poe-parchment border border-poe-lavender text-xs font-medium transition" title="Letöltés .txt fájlként">
+                        <i class="fa-solid fa-file-lines text-poe-bronze"></i> <span class="hidden md:inline">.TXT</span>
+                    </button>
+
+                    <!-- Olvasó mód -->
+                    <button onclick="openReadMode()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-poe-lavender hover:bg-poe-lavenderLight text-poe-parchment text-xs sm:text-sm font-medium transition">
+                        <i class="fa-solid fa-eye text-poe-mauve"></i> <span class="hidden sm:inline">Olvasó mód</span>
+                    </button>
+
+                    <!-- Mentés gomb -->
+                    <button onclick="saveCurrentWork(true)" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-poe-bronze hover:bg-poe-bronzeHover text-poe-bg text-xs sm:text-sm font-semibold shadow transition">
+                        <i class="fa-solid fa-feather-pointed"></i> Mentés
+                    </button>
+                </div>
+            </div>
+
+            <!-- Fő Kéziratlap -->
+            <div id="editor-paper" class="bg-poe-surface rounded-2xl shadow-xl border border-poe-lavender p-5 sm:p-8 space-y-6 transition-all duration-500">
+                
+                <!-- Cím, Műfaj, Dátum és Kedvenc jelölés -->
+                <div class="flex flex-col md:flex-row gap-4 items-start md:items-end justify-between pb-6 border-b border-poe-lavender">
+                    <div class="flex-1 w-full">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-[11px] font-semibold text-poe-mauve uppercase tracking-widest">Kézirat címe</label>
+                            <span id="autosave-indicator" class="text-[11px] text-poe-muted italic">Automatikus mentés aktív</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="text" id="editor-title" placeholder="Írd ide a mű címét..." 
+                                class="w-full gothic-title text-2xl sm:text-4xl font-semibold bg-transparent border-b border-poe-lavender focus:border-poe-bronze focus:outline-none py-1 text-poe-parchment placeholder:text-poe-muted/40">
+                            <button onclick="toggleCurrentFavorite()" id="editor-fav-btn" class="p-2 rounded-xl bg-poe-bg border border-poe-lavender text-poe-muted hover:text-poe-bronze transition" title="Kedvencekhez adás">
+                                <i class="fa-regular fa-star"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-poe-muted uppercase tracking-wider mb-1">Műfaj</label>
+                            <select id="editor-type" class="bg-poe-bg border border-poe-lavender rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-poe-parchment focus:outline-none focus:border-poe-bronze">
+                                <option value="poem">Vers</option>
+                                <option value="lyrics">Dalszöveg</option>
+                                <option value="diary">Naplóbejegyzés</option>
+                                <option value="prose">Próza / Gondolat</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-poe-muted uppercase tracking-wider mb-1">Dátum & Időpont</label>
+                            <input type="text" id="editor-date" title="Szerkeszthető dátum"
+                                class="text-xs font-medium text-poe-parchment py-2 px-3 bg-poe-bg rounded-xl border border-poe-lavender focus:border-poe-bronze focus:outline-none w-36 sm:w-40">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Költői Eszköztár -->
+                <div class="flex flex-wrap items-center justify-between gap-3 bg-poe-bg/80 p-3 rounded-xl border border-poe-lavender">
+                    <!-- Nézet váltó (Folytonos vs Sorrendező) -->
+                    <div class="flex items-center gap-1.5 bg-poe-surface p-1 rounded-xl border border-poe-lavender">
+                        <button onclick="toggleMode('textarea')" id="mode-textarea-btn" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-poe-lavender text-poe-parchment shadow-sm transition">
+                            <i class="fa-solid fa-pen-nib mr-1.5 text-poe-bronze"></i> Folytonos írás
+                        </button>
+                        <button onclick="toggleMode('lines')" id="mode-lines-btn" class="px-3 py-1.5 rounded-lg text-xs font-medium text-poe-muted hover:text-poe-parchment transition">
+                            <i class="fa-solid fa-bars-staggered mr-1.5 text-poe-mauve"></i> Sorrendező & Szótagok
+                        </button>
+                    </div>
+
+                    <!-- Segédeszközök -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="toggleSyllableSidebar()" id="syllable-toggle-btn" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-poe-surface hover:bg-poe-lavender text-poe-parchment border border-poe-lavender transition flex items-center gap-1.5" title="Soronkénti szótagszám megjelenítése">
+                            <i class="fa-solid fa-wave-square text-poe-mauve"></i> Szótagszámláló
+                        </button>
+                        <button onclick="runGrammarCheck()" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-poe-mauve/20 hover:bg-poe-mauve/30 text-poe-parchment border border-poe-mauve/40 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-spell-check text-poe-bronze"></i> Helyesírás & Stílus
+                        </button>
+                        <button onclick="insertStanzaBreak()" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-poe-surface hover:bg-poe-lavender text-poe-parchment border border-poe-lavender transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-paragraph text-poe-muted"></i> Új versszak
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 1. MÓD: Folytonos Szövegszerkesztő (Opcionális élő szótagszámláló sávval) -->
+                <div id="editor-textarea-container" class="space-y-3">
+                    <div class="relative flex rounded-xl bg-poe-bg/70 border border-poe-lavender focus-within:border-poe-bronze transition overflow-hidden">
+                        <!-- Élő soronkénti szótagszám oszlop -->
+                        <div id="live-syllable-gutter" class="hidden select-none bg-poe-surface/70 border-r border-poe-lavender/70 py-4 px-2.5 text-right font-mono text-xs text-poe-mauve leading-[1.85rem] min-w-[3.2rem]">
+                            <!-- Dinamikusan frissül -->
+                        </div>
+                        <textarea id="editor-content" rows="15" spellcheck="true" lang="hu"
+                            placeholder="Írd ide a soraidat az éj csendjében...&#10;Használj üres sorokat a versszakok elválasztásához." 
+                            class="w-full p-4 bg-transparent focus:outline-none poetic-text text-lg sm:text-xl leading-[1.85rem] text-poe-parchment placeholder:text-poe-muted/40 resize-y"></textarea>
+                    </div>
+
+                    <!-- Élő statisztikák -->
+                    <div class="flex flex-wrap justify-between items-center gap-2 text-xs text-poe-muted px-1">
+                        <div class="flex items-center gap-4">
+                            <span id="stat-words"><i class="fa-solid fa-font text-poe-bronze/70 mr-1"></i> 0 szó</span>
+                            <span id="stat-lines"><i class="fa-solid fa-align-left text-poe-mauve/70 mr-1"></i> 0 sor</span>
+                            <span id="stat-stanzas"><i class="fa-solid fa-layer-group text-poe-bronze/70 mr-1"></i> 0 versszak</span>
+                            <span id="stat-syllables"><i class="fa-solid fa-music text-poe-mauve/70 mr-1"></i> 0 szótag</span>
+                        </div>
+                        <span class="text-[11px] text-poe-muted/70">Natív magyar helyesírás-ellenőrzés bekapcsolva</span>
+                    </div>
+                </div>
+
+                <!-- 2. MÓD: Interaktív Sorrendező Mód (Drag & Drop + Nyilak + Szótagok) -->
+                <div id="editor-lines-container" class="hidden space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-poe-muted bg-poe-bg/60 p-3 rounded-xl border border-poe-lavender/60">
+                        <span><i class="fa-solid fa-circle-info text-poe-bronze mr-1.5"></i> Húzd a sorokat a fogantyúnál fogva, vagy használd a nyilakat a sorrend módosításához.</span>
+                        <button onclick="addNewLineAtEnd()" class="px-3 py-1.5 rounded-lg bg-poe-lavender hover:bg-poe-lavenderLight text-poe-parchment font-medium transition">
+                            + Új sor hozzáadása
+                        </button>
+                    </div>
+                    <div id="lines-list-wrapper" class="space-y-2 max-h-[520px] overflow-y-auto pr-1">
+                        <!-- Dinamikusan generált sorok -->
+                    </div>
+                </div>
+
+                <!-- Helyesírási & Stíluskontroll Eredmények Doboz -->
+                <div id="grammar-results-box" class="hidden bg-poe-bg border border-poe-mauve/50 p-5 rounded-2xl space-y-4 shadow-inner">
+                    <div class="flex items-center justify-between border-b border-poe-lavender pb-3">
+                        <h4 class="gothic-title text-lg font-semibold text-poe-parchment flex items-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-poe-bronze"></i> Magyar Helyesírás- és Stílusellenőrző
+                        </h4>
+                        <button onclick="closeGrammarBox()" class="text-poe-muted hover:text-poe-parchment text-xs font-medium px-2 py-1 rounded-lg bg-poe-surface">
+                            Bezárás
+                        </button>
+                    </div>
+                    
+                    <ul id="grammar-issues-list" class="space-y-2 text-xs sm:text-sm text-poe-parchment/90">
+                        <!-- Hibák és javaslatok listája -->
+                    </ul>
+
+                    <div class="flex flex-wrap gap-2.5 pt-2">
+                        <button onclick="applyAutoFormatting('spelling')" class="px-3.5 py-2 rounded-xl bg-poe-bronze hover:bg-poe-bronzeHover text-poe-bg text-xs font-semibold transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-check-double"></i> Helyesírási hibák & szóközök javítása
+                        </button>
+                        <button onclick="applyAutoFormatting('capitalize')" class="px-3.5 py-2 rounded-xl bg-poe-lavender hover:bg-poe-lavenderLight text-poe-parchment text-xs font-medium border border-poe-bronze/30 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-up-a-z"></i> Minden sor nagybetűvel kezdődjön
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ================= OLVASÓ MÓD NÉZET (READ MODE) ================= -->
+        <div id="view-read" class="hidden max-w-2xl mx-auto space-y-6">
+            <div class="flex items-center justify-between bg-poe-surface p-3.5 rounded-2xl border border-poe-lavender">
+                <button onclick="closeReadMode()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-poe-bg hover:bg-poe-lavender text-poe-parchment border border-poe-lavender text-sm font-medium transition">
+                    <i class="fa-solid fa-arrow-left text-poe-bronze"></i> Vissza a szerkesztőbe
+                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="adjustReadFontSize(-1)" class="w-9 h-9 rounded-xl bg-poe-bg hover:bg-poe-lavender text-poe-parchment border border-poe-lavender font-serif text-sm transition flex items-center justify-center" title="Kisebb betűméret">A-</button>
+                    <button onclick="adjustReadFontSize(1)" class="w-9 h-9 rounded-xl bg-poe-bg hover:bg-poe-lavender text-poe-parchment border border-poe-lavender font-serif text-base font-bold transition flex items-center justify-center" title="Nagyobb betűméret">A+</button>
+                </div>
+            </div>
+
+            <article class="bg-poe-surface rounded-2xl shadow-2xl border border-poe-lavender p-8 sm:p-14 space-y-8 relative overflow-hidden">
+                <!-- Dekoratív sarok dísz -->
+                <div class="text-center space-y-3">
+                    <span id="read-type-badge" class="px-3.5 py-1 rounded-full text-xs font-medium bg-poe-bg text-poe-mauve border border-poe-lavender">Vers</span>
+                    <h2 id="read-title" class="gothic-title text-3xl sm:text-5xl font-semibold text-poe-parchment tracking-wide">Cím</h2>
+                    <p id="read-date" class="text-xs text-poe-muted tracking-widest uppercase">2026. 11. 18.</p>
+                </div>
+                
+                <div class="flex items-center justify-center gap-4 text-poe-bronze/50">
+                    <span class="h-px w-16 bg-poe-lavender"></span>
+                    <i class="fa-solid fa-feather-pointed text-xs"></i>
+                    <span class="h-px w-16 bg-poe-lavender"></span>
+                </div>
+
+                <div id="read-content-body" class="poetic-text text-xl leading-loose whitespace-pre-wrap text-center text-poe-parchment/95">
+                    <!-- Vers / dalszöveg tartalma -->
+                </div>
+            </article>
+        </div>
+
+    </main>
+
+    <!-- Lábléc -->
+    <footer id="main-footer" class="mt-auto py-8 text-center text-xs text-poe-muted border-t border-poe-lavender/40 transition-all duration-500">
+        <p class="gothic-title text-sm text-poe-parchment/70 mb-1">Verstár & Dalszöveg Műhely — Éjféli Kiadás</p>
+        <p>Minden kéziratod biztonságosan, helyben a böngésződben tárolódik.</p>
+    </footer>
+
+    <!-- Alkalmazás Logika -->
+    <script>
+        // ================= ÁLLAPOTKEZELÉS =================
+        let works = [];
+        let currentWorkId = null;
+        let currentFilter = 'all';
+        let sortDescending = true;
+        let activeEditorMode = 'textarea'; // 'textarea' vagy 'lines'
+        let showSyllableGutter = false;
+        let isZenMode = false;
+        let autosaveTimer = null;
+        let currentReadFontIndex = 1; // 0: text-lg, 1: text-xl, 2: text-2xl, 3: text-3xl
+        const readFontClasses = ['text-lg', 'text-xl', 'text-2xl', 'text-3xl'];
+
+        // Gyakori magyar helyesírási hibák szótára (hibás -> helyes)
+        const hungarianSpellDictionary = {
+            'muszály': 'muszáj',
+            'egyenlőre': 'egyelőre',
+            'egyenlore': 'egyelőre',
+            'hülyeség': 'hülyeség',
+            'lyuk': 'lyuk',
+            'fály': 'fáj',
+            'fálydalom': 'fájdalom',
+            'éjjel': 'éjjel',
+            'éjel': 'éjjel',
+            'sziv': 'szív',
+            'szivem': 'szívem',
+            'sötétség': 'sötétség',
+            'árván': 'árván',
+            'mindíg': 'mindig',
+            'mindig': 'mindig',
+            'kivül': 'kívül',
+            'belűl': 'belül',
+            'tűz': 'tűz',
+            'tüz': 'tűz',
+            'fűz': 'fűz',
+            'füz': 'fűz',
+            'bűn': 'bűn',
+            'bün': 'bűn',
+            'bús': 'bús',
+            'bus': 'bús',
+            'hűs': 'hűs',
+            'hüs': 'hűs',
+            'mély': 'mély',
+            'méj': 'mély',
+            'sír': 'sír',
+            'sir': 'sír',
+            'sírom': 'sírom',
+            'sirom': 'sírom',
+            'kísértet': 'kísértet',
+            'kisértet': 'kísértet',
+            'kísér': 'kísér',
+            'kisér': 'kísér',
+            'így': 'így',
+            'igy': 'így',
+            'úgy': 'úgy',
+            'ugy': 'úgy',
+            'lélek': 'lélek',
+            'emlékezz': 'emlékezz',
+            'emlékez': 'emlékezz',
+            'csendben': 'csendben',
+            'csendbe': 'csendben',
+            'együtt': 'együtt',
+            'együt': 'együtt',
+            'hallgat': 'hallgat',
+            'halgat': 'hallgat',
+            'száll': 'száll',
+            'szál': 'száll',
+            'ábránd': 'ábránd',
+            'látomás': 'látomás',
+            'elmulik': 'elmúlik',
+            'elmullik': 'elmúlik',
+            'talán': 'talán',
+            'sosem': 'sosem',
+            'valaha': 'valaha',
+            'semmi': 'semmi',
+            'semi': 'semmi',
+            'valami': 'valami',
+            'valamí': 'valami'
+        };
+
+        // ================= INICIALIZÁLÁS =================
+        window.addEventListener('DOMContentLoaded', () => {
+            loadWorksFromStorage();
+            renderDashboard();
+            setupEditorListeners();
+        });
+
+        function loadWorksFromStorage() {
+            const raw = localStorage.getItem('verstar_poe_works');
+            if (raw) {
+                try {
+                    works = JSON.parse(raw);
+                } catch (e) {
+                    works = [];
+                }
+            } else {
+                // Régebbi verzió adatainak átvétele, ha léteznek
+                const legacy = localStorage.getItem('verstar_works');
+                if (legacy) {
+                    try {
+                        works = JSON.parse(legacy).map(w => ({
+                            ...w,
+                            favorite: false,
+                            history: [{ date: w.date, note: 'Importálva a korábbi műhelyből' }]
+                        }));
+                    } catch (e) { works = []; }
+                }
+
+                // Ha teljesen üres, melankolikus Poe-hangulatú minta művek betöltése
+                if (works.length === 0) {
+                    works = [
+                        {
+                            id: 'poe-sample-1',
+                            title: 'Éjféli harangszó a ködben',
+                            type: 'poem',
+                            favorite: true,
+                            date: '2026. 11. 18. 23:58',
+                            content: 'Holdfény szitál a néma márványkövekre,\nSuhogó árnyak ülnek a régi fákra,\nFekete toll hull a fakó pergamenre,\nEmléked visszatér az éjféli órára.\n\nSuttog a szél a kripta hideg vasrácsán,\nValaki lépdel kint a deres avaron,\nEltűnt a fény a gyertya halvány lángján,\nSoha már — kongatja a távoli harang.',
+                            history: [
+                                { date: '2026. 11. 18. 23:58', note: 'Kézirat létrehozva az éjféli műhelyben' }
+                            ]
+                        },
+                        {
+                            id: 'poe-sample-2',
+                            title: 'Ködös kikötő balladája',
+                            type: 'lyrics',
+                            favorite: false,
+                            date: '2026. 11. 15. 21:14',
+                            content: '[Verze 1]\nSzürke hullám mossa a móló kövét,\nLámpások hunyorognak a sűrű ködön át,\nA szél elviszi a régi dalok neszét,\nÉs őrzi az elveszett hajók titkát.\n\n[Refrén]\nÓ, éjféli tenger, sötét és mély,\nVidd el a bánatot, mit a szívem rejt,\nA csillagok fénye is lassan kihuny,\nDe a dallam a csendben tovább zenél.',
+                            history: [
+                                { date: '2026. 11. 15. 21:14', note: 'Dalszöveg vázlat rögzítve' }
+                            ]
+                        },
+                        {
+                            id: 'poe-sample-3',
+                            title: 'Töredék egy esős novemberi estéről',
+                            type: 'diary',
+                            favorite: false,
+                            date: '2026. 11. 10. 19:40',
+                            content: 'Az ablaküvegen lassan csorognak le a vízcseppek, mintha maga az égbolt siratná az elmúlt nyarat. A gyertya lángja meg-megremeg, valahányszor a huzat átsuhan a szobán. Ilyenkor születnek a legőszintébb sorok.',
+                            history: [
+                                { date: '2026. 11. 10. 19:40', note: 'Naplóbejegyzés lejegyezve' }
+                            ]
+                        }
+                    ];
+                    saveWorksToStorage();
+                }
+            }
+        }
+
+        function saveWorksToStorage() {
+            localStorage.setItem('verstar_poe_works', JSON.stringify(works));
+        }
+
+        function getFormattedNow() {
+            const now = new Date();
+            return `${now.getFullYear()}. ${String(now.getMonth() + 1).padStart(2, '0')}. ${String(now.getDate()).padStart(2, '0')}. ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        }
+
+        // ================= NÉZETVÁLTÁS =================
+        function switchView(viewName) {
+            if (isZenMode && viewName !== 'editor') {
+                toggleZenMode(false);
+            }
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-editor').classList.add('hidden');
+            document.getElementById('view-read').classList.add('hidden');
+
+            if (viewName === 'dashboard') {
+                document.getElementById('view-dashboard').classList.remove('hidden');
+                renderDashboard();
+            } else if (viewName === 'editor') {
+                document.getElementById('view-editor').classList.remove('hidden');
+            } else if (viewName === 'read') {
+                document.getElementById('view-read').classList.remove('hidden');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ================= KÖNYVTÁR / DASHBOARD =================
+        function renderDashboard() {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+
+            let filtered = works.filter(w => {
+                let matchesType = true;
+                if (currentFilter === 'favorites') {
+                    matchesType = !!w.favorite;
+                } else if (currentFilter === 'diary') {
+                    matchesType = (w.type === 'diary' || w.type === 'prose');
+                } else if (currentFilter !== 'all') {
+                    matchesType = w.type === currentFilter;
+                }
+
+                const matchesSearch = !query || 
+                    w.title.toLowerCase().includes(query) || 
+                    w.content.toLowerCase().includes(query) ||
+                    w.date.toLowerCase().includes(query);
+
+                return matchesType && matchesSearch;
+            });
+
+            // Rendezés
+            filtered.sort((a, b) => {
+                const timeA = parseHungarianDate(a.date);
+                const timeB = parseHungarianDate(b.date);
+                return sortDescending ? timeB - timeA : timeA - timeB;
+            });
+
+            // Statisztikák frissítése
+            document.getElementById('stat-total').innerText = works.length;
+            document.getElementById('stat-poems').innerText = works.filter(w => w.type === 'poem').length;
+            document.getElementById('stat-lyrics').innerText = works.filter(w => w.type === 'lyrics').length;
+            document.getElementById('stat-diary').innerText = works.filter(w => w.type === 'diary' || w.type === 'prose').length;
+
+            const grid = document.getElementById('works-grid');
+            const emptyState = document.getElementById('empty-state');
+            grid.innerHTML = '';
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                grid.classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.classList.remove('hidden');
+
+            filtered.forEach(work => {
+                const card = document.createElement('div');
+                card.className = 'bg-poe-surface hover:bg-poe-surfaceHover rounded-2xl p-6 shadow-lg border border-poe-lavender hover:border-poe-bronze/50 transition-all duration-300 flex flex-col justify-between group';
+
+                const badgeMap = {
+                    poem: '<span class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-poe-bg text-poe-bronze border border-poe-bronze/30"><i class="fa-solid fa-feather mr-1"></i>Vers</span>',
+                    lyrics: '<span class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-poe-bg text-poe-mauve border border-poe-mauve/30"><i class="fa-solid fa-music mr-1"></i>Dalszöveg</span>',
+                    diary: '<span class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-poe-bg text-poe-parchment/80 border border-poe-lavender"><i class="fa-solid fa-book-open mr-1"></i>Napló</span>',
+                    prose: '<span class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-poe-bg text-poe-parchment/80 border border-poe-lavender"><i class="fa-solid fa-quill mr-1"></i>Próza</span>'
+                };
+
+                const typeBadge = badgeMap[work.type] || badgeMap.poem;
+                const snippet = work.content.length > 135 ? work.content.substring(0, 135) + '...' : work.content;
+                const starIcon = work.favorite 
+                    ? '<i class="fa-solid fa-star text-poe-bronze"></i>' 
+                    : '<i class="fa-regular fa-star text-poe-muted hover:text-poe-bronze"></i>';
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-3.5">
+                            ${typeBadge}
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] text-poe-muted">${escapeHTML(work.date)}</span>
+                                <button onclick="toggleWorkFavorite('${work.id}', event)" class="text-xs p-1 transition" title="Kedvenc jelölése">
+                                    ${starIcon}
+                                </button>
+                            </div>
+                        </div>
+                        <h3 onclick="openEditor('${work.id}')" class="cursor-pointer gothic-title text-2xl font-semibold text-poe-parchment group-hover:text-poe-bronze transition mb-2.5 line-clamp-1">
+                            ${escapeHTML(work.title || 'Névtelen kézirat')}
+                        </h3>
+                        <p onclick="openEditor('${work.id}')" class="cursor-pointer poetic-text text-base text-poe-parchment/75 line-clamp-4 whitespace-pre-wrap italic leading-relaxed">
+                            ${escapeHTML(snippet || 'Üres kéziratlap...')}
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between pt-5 mt-5 border-t border-poe-lavender/60">
+                        <button onclick="openEditor('${work.id}')" class="px-3.5 py-1.5 rounded-xl bg-poe-lavender/70 hover:bg-poe-lavender text-poe-parchment text-xs font-medium transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-pen-nib text-poe-bronze"></i> Megnyitás
+                        </button>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="duplicateWork('${work.id}')" class="w-8 h-8 rounded-xl bg-poe-bg hover:bg-poe-lavender text-poe-muted hover:text-poe-parchment border border-poe-lavender/60 transition flex items-center justify-center text-xs" title="Másolat készítése">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                            <button onclick="confirmDeleteWork('${work.id}')" class="w-8 h-8 rounded-xl bg-poe-bg hover:bg-poe-crimson text-poe-muted hover:text-poe-parchment border border-poe-lavender/60 transition flex items-center justify-center text-xs" title="Kézirat törlése">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function parseHungarianDate(dateStr) {
+            if (!dateStr) return 0;
+            const nums = dateStr.match(/\d+/g);
+            if (!nums || nums.length < 3) return 0;
+            return new Date(
+                parseInt(nums[0]),
+                parseInt(nums[1]) - 1,
+                parseInt(nums[2]),
+                nums[3] ? parseInt(nums[3]) : 0,
+                nums[4] ? parseInt(nums[4]) : 0
+            ).getTime();
+        }
+
+        function setFilter(type) {
+            currentFilter = type;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = 'filter-btn px-3.5 py-2 rounded-xl text-xs font-medium bg-poe-bg hover:bg-poe-lavender text-poe-parchment border border-poe-lavender transition';
+            });
+            const activeBtn = document.getElementById(`filter-${type}`);
+            if (activeBtn) {
+                activeBtn.className = 'filter-btn px-3.5 py-2 rounded-xl text-xs font-semibold bg-poe-bronze text-poe-bg transition';
+            }
+            renderDashboard();
+        }
+
+        function handleSearch() {
+            renderDashboard();
+        }
+
+        function toggleSortOrder() {
+            sortDescending = !sortDescending;
+            document.getElementById('sort-label').innerText = sortDescending ? 'Legújabb' : 'Legrégebbi';
+            renderDashboard();
+        }
+
+        function toggleWorkFavorite(id, event) {
+            if (event) event.stopPropagation();
+            const work = works.find(w => w.id === id);
+            if (!work) return;
+            work.favorite = !work.favorite;
+            saveWorksToStorage();
+            renderDashboard();
+            showToast(work.favorite ? 'Kedvencek közé jelölve.' : 'Eltávolítva a kedvencek közül.', 'info');
+        }
+
+        // ================= SZERKESZTŐ MŰVELETEK =================
+        function openNewEditor(defaultType = 'poem') {
+            currentWorkId = null;
+            document.getElementById('editor-title').value = '';
+            document.getElementById('editor-type').value = defaultType;
+            document.getElementById('editor-content').value = '';
+            document.getElementById('editor-date').value = getFormattedNow();
+            updateFavoriteButtonUI(false);
+
+            toggleMode('textarea');
+            closeGrammarBox();
+            updateTextStats();
+            switchView('editor');
+        }
+
+        function openEditor(id) {
+            const work = works.find(w => w.id === id);
+            if (!work) return;
+
+            currentWorkId = work.id;
+            document.getElementById('editor-title').value = work.title;
+            document.getElementById('editor-type').value = work.type;
+            document.getElementById('editor-content').value = work.content;
+            document.getElementById('editor-date').value = work.date;
+            updateFavoriteButtonUI(!!work.favorite);
+
+            toggleMode('textarea');
+            closeGrammarBox();
+            updateTextStats();
+            switchView('editor');
+        }
+
+        function toggleCurrentFavorite() {
+            if (!currentWorkId) {
+                saveCurrentWork(false);
+            }
+            const work = works.find(w => w.id === currentWorkId);
+            if (work) {
+                work.favorite = !work.favorite;
+                updateFavoriteButtonUI(work.favorite);
+                saveWorksToStorage();
+                showToast(work.favorite ? 'Kedvencek közé jelölve.' : 'Kedvenc jelölés levéve.', 'info');
+            }
+        }
+
+        function updateFavoriteButtonUI(isFav) {
+            const btn = document.getElementById('editor-fav-btn');
+            if (isFav) {
+                btn.innerHTML = '<i class="fa-solid fa-star text-poe-bronze"></i>';
+                btn.classList.add('border-poe-bronze/60');
+            } else {
+                btn.innerHTML = '<i class="fa-regular fa-star"></i>';
+                btn.classList.remove('border-poe-bronze/60');
+            }
+        }
+
+        function saveCurrentWork(manual = true) {
+            if (activeEditorMode === 'lines') {
+                syncLinesToTextarea();
+            }
+            const title = document.getElementById('editor-title').value.trim() || 'Névtelen kézirat';
+            const type = document.getElementById('editor-type').value;
+            const content = document.getElementById('editor-content').value;
+            const dateVal = document.getElementById('editor-date').value.trim() || getFormattedNow();
+            const nowStr = getFormattedNow();
+
+            if (currentWorkId) {
+                const index = works.findIndex(w => w.id === currentWorkId);
+                if (index !== -1) {
+                    const prevContent = works[index].content;
+                    works[index].title = title;
+                    works[index].type = type;
+                    works[index].content = content;
+                    works[index].date = dateVal;
+                    if (!works[index].history) works[index].history = [];
+                    if (manual && prevContent !== content) {
+                        works[index].history.unshift({
+                            date: nowStr,
+                            note: `Kézirat mentve (${countWords(content)} szó, ${countSyllables(content)} szótag)`
+                        });
+                    }
+                }
+            } else {
+                const newWork = {
+                    id: 'work-' + Date.now(),
+                    title,
+                    type,
+                    content,
+                    date: dateVal,
+                    favorite: false,
+                    history: [
+                        { date: nowStr, note: 'Új kézirat létrehozva' }
+                    ]
+                };
+                works.unshift(newWork);
+                currentWorkId = newWork.id;
+            }
+
+            saveWorksToStorage();
+            const indicator = document.getElementById('autosave-indicator');
+            indicator.innerText = `Mentve: ${nowStr.split(' ').pop()}`;
+            if (manual) {
+                showToast('A kézirat biztonságosan rögzítve lett.', 'success');
+            }
+        }
+
+        function duplicateWork(id) {
+            const work = works.find(w => w.id === id);
+            if (!work) return;
+            const nowStr = getFormattedNow();
+            const copy = {
+                id: 'work-' + Date.now(),
+                title: work.title + ' (Másolat)',
+                type: work.type,
+                content: work.content,
+                date: nowStr,
+                favorite: false,
+                history: [{ date: nowStr, note: `Másolat készítve ebből: „${work.title}”` }]
+            };
+            works.unshift(copy);
+            saveWorksToStorage();
+            renderDashboard();
+            showToast('Kézirat lemásolva.', 'success');
+        }
+
+        function confirmDeleteWork(id) {
+            showModal(
+                'Kézirat megsemmisítése',
+                'Biztosan végleg törölni szeretnéd ezt a művet? A sorok örökre eltűnnek az éjben.',
+                () => {
+                    works = works.filter(w => w.id !== id);
+                    saveWorksToStorage();
+                    renderDashboard();
+                    showToast('A kézirat törölve lett.', 'info');
+                }
+            );
+        }
+
+        // ================= VÁLTOZÁSNAPLÓ (HISTORY) =================
+        function openHistoryModal() {
+            saveCurrentWork(false);
+            const work = works.find(w => w.id === currentWorkId);
+            const list = document.getElementById('history-list');
+            list.innerHTML = '';
+
+            if (!work || !work.history || work.history.length === 0) {
+                list.innerHTML = '<p class="text-poe-muted italic text-center py-4">Még nincs rögzített naplóbejegyzés ehhez a kézirathoz.</p>';
+            } else {
+                work.history.forEach((entry, idx) => {
+                    const item = document.createElement('div');
+                    item.className = 'p-3 rounded-xl bg-poe-bg border border-poe-lavender flex items-start justify-between gap-3';
+                    item.innerHTML = `
+                        <div class="flex items-start gap-2.5">
+                            <span class="w-2 h-2 rounded-full bg-poe-bronze mt-1.5 shrink-0"></span>
+                            <div>
+                                <p class="text-poe-parchment font-medium">${escapeHTML(entry.note)}</p>
+                                <p class="text-xs text-poe-muted mt-0.5">${escapeHTML(entry.date)}</p>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-mono text-poe-mauve px-2 py-0.5 rounded bg-poe-surface border border-poe-lavender">#${work.history.length - idx}</span>
+                    `;
+                    list.appendChild(item);
+                });
+            }
+
+            document.getElementById('history-modal').classList.remove('hidden');
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('history-modal').classList.add('hidden');
+        }
+
+        // ================= SZÓTAGSZÁMLÁLÓ & STATISZTIKÁK =================
+        // Magyar magánhangzók alapú szótagszámláló algoritmus
+        function countLineSyllables(line) {
+            if (!line || !line.trim()) return 0;
+            // Kiszedjük a szögletes zárójeles jelöléseket, pl. [Refrén]
+            const cleaned = line.replace(/\[.*?\]/g, '').trim();
+            if (!cleaned) return 0;
+            const vowels = cleaned.match(/[aáeéiíoóöőuúüűAÁEÉIÍOÓÖŐUÚÜŰ]/g);
+            return vowels ? vowels.length : 0;
+        }
+
+        function countSyllables(text) {
+            return text.split('\n').reduce((sum, line) => sum + countLineSyllables(line), 0);
+        }
+
+        function countWords(text) {
+            const trimmed = text.trim();
+            return trimmed ? trimmed.split(/\s+/).length : 0;
+        }
+
+        function updateTextStats() {
+            const text = document.getElementById('editor-content').value;
+            const lines = text.split('\n');
+            const nonEmptyLines = lines.filter(l => l.trim().length > 0);
+            const stanzas = text.trim() ? text.trim().split(/\n\s*\n/).filter(s => s.trim().length > 0).length : 0;
+            const totalSyllables = countSyllables(text);
+            const totalWords = countWords(text);
+
+            document.getElementById('stat-words').innerHTML = `<i class="fa-solid fa-font text-poe-bronze/70 mr-1"></i> ${totalWords} szó`;
+            document.getElementById('stat-lines').innerHTML = `<i class="fa-solid fa-align-left text-poe-mauve/70 mr-1"></i> ${nonEmptyLines.length} sor`;
+            document.getElementById('stat-stanzas').innerHTML = `<i class="fa-solid fa-layer-group text-poe-bronze/70 mr-1"></i> ${stanzas} versszak`;
+            document.getElementById('stat-syllables').innerHTML = `<i class="fa-solid fa-music text-poe-mauve/70 mr-1"></i> ${totalSyllables} szótag`;
+
+            updateLiveSyllableGutter(lines);
+        }
+
+        function toggleSyllableSidebar() {
+            showSyllableGutter = !showSyllableGutter;
+            const gutter = document.getElementById('live-syllable-gutter');
+            const btn = document.getElementById('syllable-toggle-btn');
+
+            if (showSyllableGutter) {
+                gutter.classList.remove('hidden');
+                btn.classList.add('border-poe-bronze', 'bg-poe-lavender');
+                updateTextStats();
+                showToast('Soronkénti szótagszámláló bekapcsolva.', 'info');
+            } else {
+                gutter.classList.add('hidden');
+                btn.classList.remove('border-poe-bronze', 'bg-poe-lavender');
+            }
+        }
+
+        function updateLiveSyllableGutter(lines) {
+            if (!showSyllableGutter) return;
+            const gutter = document.getElementById('live-syllable-gutter');
+            gutter.innerHTML = lines.map(line => {
+                const count = countLineSyllables(line);
+                return count > 0 ? `<div>${count}</div>` : `<div class="opacity-20">&middot;</div>`;
+            }).join('');
+        }
+
+        function setupEditorListeners() {
+            const ta = document.getElementById('editor-content');
+            const titleInput = document.getElementById('editor-title');
+            const gutter = document.getElementById('live-syllable-gutter');
+
+            const triggerAutoSave = () => {
+                updateTextStats();
+                clearTimeout(autosaveTimer);
+                document.getElementById('autosave-indicator').innerText = 'Írás folyamatban...';
+                autosaveTimer = setTimeout(() => {
+                    saveCurrentWork(false);
+                }, 1500);
+            };
+
+            ta.addEventListener('input', triggerAutoSave);
+            titleInput.addEventListener('input', triggerAutoSave);
+
+            // Görgetés szinkronizálása a szótag oszlop és a textarea között
+            ta.addEventListener('scroll', () => {
+                gutter.scrollTop = ta.scrollTop;
+            });
+        }
+
+        // ================= INTERAKTÍV SORRENDEZŐ MÓD (DRAG & DROP + NYILAK) =================
+        let draggedLineIndex = null;
+
+        function toggleMode(mode) {
+            activeEditorMode = mode;
+            const taContainer = document.getElementById('editor-textarea-container');
+            const linesContainer = document.getElementById('editor-lines-container');
+            const taBtn = document.getElementById('mode-textarea-btn');
+            const linesBtn = document.getElementById('mode-lines-btn');
+
+            if (mode === 'textarea') {
+                if (!linesContainer.classList.contains('hidden')) {
+                    syncLinesToTextarea();
+                }
+                taContainer.classList.remove('hidden');
+                linesContainer.classList.add('hidden');
+                taBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-poe-lavender text-poe-parchment shadow-sm transition';
+                linesBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-poe-muted hover:text-poe-parchment transition';
+            } else {
+                syncTextareaToLines();
+                taContainer.classList.add('hidden');
+                linesContainer.classList.remove('hidden');
+                linesBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-poe-lavender text-poe-parchment shadow-sm transition';
+                taBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-poe-muted hover:text-poe-parchment transition';
+            }
+        }
+
+        function syncTextareaToLines() {
+            const content = document.getElementById('editor-content').value;
+            const lines = content.split('\n');
+            renderLineItems(lines);
+        }
+
+        function getLinesFromOrganizer() {
+            const inputs = document.querySelectorAll('.line-input');
+            const lines = [];
+            inputs.forEach(input => lines.push(input.value));
+            return lines;
+        }
+
+        function syncLinesToTextarea() {
+            const lines = getLinesFromOrganizer();
+            document.getElementById('editor-content').value = lines.join('\n');
+            updateTextStats();
+        }
+
+        function renderLineItems(lines) {
+            const wrapper = document.getElementById('lines-list-wrapper');
+            wrapper.innerHTML = '';
+
+            lines.forEach((line, index) => {
+                const syllables = countLineSyllables(line);
+                const isEmpty = line.trim().length === 0;
+                const row = document.createElement('div');
+                row.draggable = true;
+                row.dataset.index = index;
+                row.className = `line-row flex items-center gap-2 p-2.5 rounded-xl border transition ${isEmpty ? 'bg-poe-bg/40 border-dashed border-poe-lavender/60' : 'bg-poe-bg border-poe-lavender hover:border-poe-bronze/50'}`;
+
+                row.innerHTML = `
+                    <span class="cursor-grab active:cursor-grabbing text-poe-muted hover:text-poe-bronze px-1" title="Húzd a mozgatáshoz">
+                        <i class="fa-solid fa-grip-vertical"></i>
+                    </span>
+                    <span class="text-[11px] text-poe-muted w-6 text-center font-mono">${index + 1}.</span>
+                    <input type="text" value="${escapeHTML(line)}" placeholder="(Üres versszak-elválasztó sor)" 
+                        oninput="updateLineSyllableBadge(this)"
+                        class="line-input flex-1 bg-transparent border-none focus:outline-none poetic-text text-base sm:text-lg text-poe-parchment placeholder:text-poe-muted/40 px-2">
+                    <span class="syllable-badge px-2 py-0.5 rounded-md bg-poe-surface border border-poe-lavender font-mono text-[11px] text-poe-mauve min-w-[4.2rem] text-center" title="Szótagszám">
+                        ${syllables} szótag
+                    </span>
+                    <div class="flex items-center gap-1">
+                        <button onclick="insertLineBelow(${index})" class="w-7 h-7 rounded-lg hover:bg-poe-lavender text-poe-muted hover:text-poe-bronze flex items-center justify-center text-xs" title="Új sor beszúrása alá">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                        <button onclick="moveLine(${index}, -1)" class="w-7 h-7 rounded-lg hover:bg-poe-lavender text-poe-muted hover:text-poe-parchment flex items-center justify-center text-xs" title="Mozgatás felfelé">
+                            <i class="fa-solid fa-arrow-up"></i>
+                        </button>
+                        <button onclick="moveLine(${index}, 1)" class="w-7 h-7 rounded-lg hover:bg-poe-lavender text-poe-muted hover:text-poe-parchment flex items-center justify-center text-xs" title="Mozgatás lefelé">
+                            <i class="fa-solid fa-arrow-down"></i>
+                        </button>
+                        <button onclick="removeLineItem(${index})" class="w-7 h-7 rounded-lg hover:bg-poe-crimson text-poe-muted hover:text-poe-parchment flex items-center justify-center text-xs" title="Sor törlése">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                `;
+
+                // Drag and Drop események
+                row.addEventListener('dragstart', (e) => {
+                    draggedLineIndex = index;
+                    row.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                row.addEventListener('dragend', () => {
+                    row.classList.remove('dragging');
+                    document.querySelectorAll('.line-row').forEach(r => r.classList.remove('drag-over'));
+                });
+
+                row.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    row.classList.add('drag-over');
+                });
+
+                row.addEventListener('dragleave', () => {
+                    row.classList.remove('drag-over');
+                });
+
+                row.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    row.classList.remove('drag-over');
+                    if (draggedLineIndex === null || draggedLineIndex === index) return;
+                    const currentLines = getLinesFromOrganizer();
+                    const [movedItem] = currentLines.splice(draggedLineIndex, 1);
+                    currentLines.splice(index, 0, movedItem);
+                    renderLineItems(currentLines);
+                    syncLinesToTextarea();
+                });
+
+                wrapper.appendChild(row);
+            });
+        }
+
+        function updateLineSyllableBadge(inputEl) {
+            const badge = inputEl.parentElement.querySelector('.syllable-badge');
+            if (badge) {
+                badge.innerText = `${countLineSyllables(inputEl.value)} szótag`;
+            }
+            syncLinesToTextarea();
+        }
+
+        function moveLine(index, direction) {
+            const lines = getLinesFromOrganizer();
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= lines.length) return;
+            [lines[index], lines[newIndex]] = [lines[newIndex], lines[index]];
+            renderLineItems(lines);
+            syncLinesToTextarea();
+        }
+
+        function insertLineBelow(index) {
+            const lines = getLinesFromOrganizer();
+            lines.splice(index + 1, 0, '');
+            renderLineItems(lines);
+            syncLinesToTextarea();
+        }
+
+        function addNewLineAtEnd() {
+            const lines = getLinesFromOrganizer();
+            lines.push('');
+            renderLineItems(lines);
+            syncLinesToTextarea();
+        }
+
+        function removeLineItem(index) {
+            const lines = getLinesFromOrganizer();
+            lines.splice(index, 1);
+            renderLineItems(lines.length ? lines : ['']);
+            syncLinesToTextarea();
+        }
+
+        function insertStanzaBreak() {
+            if (activeEditorMode === 'textarea') {
+                const ta = document.getElementById('editor-content');
+                const start = ta.selectionStart;
+                const end = ta.selectionEnd;
+                ta.value = ta.value.substring(0, start) + '\n\n' + ta.value.substring(end);
+                ta.selectionStart = ta.selectionEnd = start + 2;
+                ta.focus();
+                updateTextStats();
+            } else {
+                const lines = getLinesFromOrganizer();
+                lines.push('');
+                renderLineItems(lines);
+                syncLinesToTextarea();
+            }
+        }
+
+        // ================= MAGYAR HELYESÍRÁS- ÉS STÍLUSELLENŐRZŐ =================
+        function runGrammarCheck() {
+            if (activeEditorMode === 'lines') {
+                syncLinesToTextarea();
+            }
+            const content = document.getElementById('editor-content').value;
+            const lines = content.split('\n');
+            const issuesList = document.getElementById('grammar-issues-list');
+            issuesList.innerHTML = '';
+
+            const issues = [];
+
+            // 1. Gyakori magyar helyesírási hibák keresése
+            const foundTypos = [];
+            const words = content.match(/[a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]+/g) || [];
+            words.forEach(word => {
+                const lower = word.toLowerCase();
+                if (hungarianSpellDictionary[lower] && hungarianSpellDictionary[lower] !== lower) {
+                    foundTypos.push(`„${word}” → javasolt: „${hungarianSpellDictionary[lower]}”`);
+                }
+            });
+            const uniqueTypos = [...new Set(foundTypos)];
+            if (uniqueTypos.length > 0) {
+                issues.push(`Helyesírási észrevételek: ${uniqueTypos.join(', ')}`);
+            }
+
+            // 2. Dupla szóközök
+            if (/ {2,}/.test(content)) {
+                issues.push('Felesleges dupla szóközök találhatók a sorokban.');
+            }
+
+            // 3. Írásjel előtti szóköz (pl. "szó ,")
+            if (/\s+[,.;:!?]/.test(content)) {
+                issues.push('Írásjel előtti felesleges szóköz található (pl. „szó ,”).');
+            }
+
+            // 4. Kisbetűvel kezdődő verssorok
+            let lowercaseLines = 0;
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (trimmed.length > 0 && !trimmed.startsWith('[')) {
+                    const first = trimmed[0];
+                    if (first === first.toLowerCase() && first !== first.toUpperCase()) {
+                        lowercaseLines++;
+                    }
+                }
+            });
+            if (lowercaseLines > 0) {
+                issues.push(`${lowercaseLines} sor kisbetűvel kezdődik (klasszikus versformánál érdemes nagybetűvel indítani).`);
+            }
+
+            if (issues.length === 0) {
+                issuesList.innerHTML = `<li class="text-poe-bronze flex items-center gap-2"><i class="fa-solid fa-check-circle"></i> A kézirat helyesírása és tipográfiája makulátlan!</li>`;
+            } else {
+                issues.forEach(msg => {
+                    const li = document.createElement('li');
+                    li.className = 'flex items-start gap-2';
+                    li.innerHTML = `<i class="fa-solid fa-feather-pointed text-poe-mauve mt-1"></i> <span>${escapeHTML(msg)}</span>`;
+                    issuesList.appendChild(li);
+                });
+            }
+
+            document.getElementById('grammar-results-box').classList.remove('hidden');
+        }
+
+        function closeGrammarBox() {
+            document.getElementById('grammar-results-box').classList.add('hidden');
+        }
+
+        function applyAutoFormatting(mode) {
+            const ta = document.getElementById('editor-content');
+            let content = ta.value;
+
+            if (mode === 'spelling') {
+                // Szótári szavak javítása kis/nagybetű megtartásával
+                content = content.replace(/[a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]+/g, (match) => {
+                    const lower = match.toLowerCase();
+                    if (hungarianSpellDictionary[lower]) {
+                        const corrected = hungarianSpellDictionary[lower];
+                        if (match[0] === match[0].toUpperCase()) {
+                            return corrected.charAt(0).toUpperCase() + corrected.slice(1);
+                        }
+                        return corrected;
+                    }
+                    return match;
+                });
+                // Dupla szóközök és írásjel előtti szóközök javítása
+                content = content.replace(/ {2,}/g, ' ');
+                content = content.replace(/\s+([,.;:!?])/g, '$1');
+                showToast('Helyesírási és szóközhibák javítva!', 'success');
+            } else if (mode === 'capitalize') {
+                content = content.split('\n').map(line => {
+                    const trimmed = line.trim();
+                    if (trimmed.length > 0 && !trimmed.startsWith('[')) {
+                        return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+                    }
+                    return line;
+                }).join('\n');
+                showToast('Minden verssor nagybetűvel kezdődik.', 'success');
+            }
+
+            ta.value = content;
+            updateTextStats();
+            runGrammarCheck();
+        }
+
+        // ================= GYERTYAFÉNYES ZEN MÓD =================
+        function toggleZenMode(forceState) {
+            isZenMode = typeof forceState === 'boolean' ? forceState : !isZenMode;
+            const header = document.getElementById('main-header');
+            const footer = document.getElementById('main-footer');
+            const paper = document.getElementById('editor-paper');
+            const zenBtn = document.getElementById('zen-btn');
+
+            if (isZenMode) {
+                header.classList.add('hidden');
+                footer.classList.add('hidden');
+                paper.classList.add('candlelight-glow', 'border-poe-bronze/50');
+                zenBtn.classList.add('border-poe-bronze', 'text-poe-bronze');
+                showToast('Gyertyafényes elmélyülés mód bekapcsolva.', 'info');
+            } else {
+                header.classList.remove('hidden');
+                footer.classList.remove('hidden');
+                paper.classList.remove('candlelight-glow', 'border-poe-bronze/50');
+                zenBtn.classList.remove('border-poe-bronze', 'text-poe-bronze');
+            }
+        }
+
+        // ================= EXPORT & IMPORT =================
+        function exportAllJSON() {
+            const dataStr = JSON.stringify(works, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `verstar_mentes_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Teljes kézirattár exportálva (JSON).', 'success');
+        }
+
+        function importFromJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported)) {
+                        // Összefésülés azonosító alapján
+                        const existingIds = new Set(works.map(w => w.id));
+                        let addedCount = 0;
+                        imported.forEach(item => {
+                            if (item.title && typeof item.content === 'string') {
+                                if (!existingIds.has(item.id)) {
+                                    works.unshift(item);
+                                    addedCount++;
+                                }
+                            }
+                        });
+                        saveWorksToStorage();
+                        renderDashboard();
+                        showToast(`${addedCount} új kézirat sikeresen betöltve!`, 'success');
+                    } else {
+                        showToast('Érvénytelen fájlformátum.', 'info');
+                    }
+                } catch (err) {
+                    showToast('Hiba történt a fájl beolvasásakor.', 'info');
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function exportCurrentTXT() {
+            if (activeEditorMode === 'lines') {
+                syncLinesToTextarea();
+            }
+            const title = document.getElementById('editor-title').value.trim() || 'Névtelen_kezirat';
+            const date = document.getElementById('editor-date').value;
+            const content = document.getElementById('editor-content').value;
+
+            const txtBody = `${title.toUpperCase()}\n(${date})\n${'='.repeat(40)}\n\n${content}\n`;
+            const blob = new Blob([txtBody], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${title.replace(/[^a-zA-Z0-9áéíóöőúüűÁÉÍÓÖŐÚÜŰ_-]/g, '_')}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Kézirat letöltve .TXT fájlként.', 'success');
+        }
+
+        // ================= OLVASÓ MÓD =================
+        function openReadMode() {
+            if (activeEditorMode === 'lines') {
+                syncLinesToTextarea();
+            }
+            const title = document.getElementById('editor-title').value.trim() || 'Névtelen kézirat';
+            const type = document.getElementById('editor-type').value;
+            const content = document.getElementById('editor-content').value;
+            const date = document.getElementById('editor-date').value;
+
+            const typeLabels = {
+                poem: 'Vers',
+                lyrics: 'Dalszöveg',
+                diary: 'Naplóbejegyzés',
+                prose: 'Próza / Gondolat'
+            };
+
+            document.getElementById('read-title').innerText = title;
+            document.getElementById('read-date').innerText = date;
+            document.getElementById('read-content-body').innerText = content;
+            document.getElementById('read-type-badge').innerText = typeLabels[type] || 'Kézirat';
+
+            switchView('read');
+        }
+
+        function closeReadMode() {
+            switchView('editor');
+        }
+
+        function adjustReadFontSize(delta) {
+            const body = document.getElementById('read-content-body');
+            body.classList.remove(...readFontClasses);
+            currentReadFontIndex = Math.max(0, Math.min(readFontClasses.length - 1, currentReadFontIndex + delta));
+            body.classList.add(readFontClasses[currentReadFontIndex]);
+        }
+
+        // ================= SEGÉDFÜGGVÉNYEK (TOAST, MODAL, ESCAPE) =================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const icon = type === 'success' 
+                ? '<i class="fa-solid fa-feather-pointed text-poe-bronze"></i>' 
+                : '<i class="fa-solid fa-moon text-poe-mauve"></i>';
+
+            toast.className = 'bg-poe-surface border border-poe-lavender text-poe-parchment px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-xs sm:text-sm font-medium transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto';
+            toast.innerHTML = `${icon} <span>${escapeHTML(message)}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function showModal(title, message, onConfirm) {
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-content');
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+
+            const confirmBtn = document.getElementById('modal-confirm');
+            const cancelBtn = document.getElementById('modal-cancel');
+
+            const newConfirm = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+
+            const newCancel = cancelBtn.cloneNode(true);
+            cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+
+            newConfirm.addEventListener('click', () => {
+                closeModal();
+                if (onConfirm) onConfirm();
+            });
+            newCancel.addEventListener('click', closeModal);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-content');
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 250);
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag] || tag));
+        }
+    </script>
+</body>
+</html>
